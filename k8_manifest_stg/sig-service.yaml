@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: simpson-stg-sig-service
+  namespace: simpson-videochat
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      protocol: TCP
+      targetPort: 8001
+  selector:
+    app: simpson-stg-sig

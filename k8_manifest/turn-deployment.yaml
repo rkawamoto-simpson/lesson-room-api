@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simpson-prod-turn-deployment
+  namespace: simpson-videochat
+spec:
+  selector:
+    matchLabels:
+      app: simpson-prod-turn
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: simpson-prod-turn
+    spec:     
+      hostNetwork: true           
+      volumes:
+        - name: config-turn-volume
+          configMap:
+            name: simpson-prod-turn-config
+            items:
+              - key: turn_config
+                path: turnserver.conf
+      containers:
+      - name: simpson-prod-turn-container
+        image: instrumentisto/coturn
+        volumeMounts:
+        - mountPath: /etc/coturn/
+          name: config-turn-volume

@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simpson-prod-mng-deployment
+  namespace: simpson-videochat
+spec:
+  selector:
+    matchLabels:
+      app: simpson-prod-mng
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: simpson-prod-mng
+    spec:
+      containers:
+      - name: simpson-prod-mng-container
+        image: 792387376808.dkr.ecr.ap-northeast-1.amazonaws.com/simpson-prod-mng:latest
+        ports:
+        - containerPort: 8003

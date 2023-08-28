@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: simpson-prod-turn-config
+  namespace: simpson-videochat
+data:
+  turn_config: |
+    listening-port=3478
+    verbose
+    lt-cred-mech
+    user=simpson:simpson5aver
+    realm=turn.eigox.jp
+    mongo-userdb="mongodb://simpson-prod-mongo-turn-service.simpson-videochat.svc.cluster.local:27017/coturn"

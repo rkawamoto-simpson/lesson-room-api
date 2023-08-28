@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simpson-stg-api-deploy
+  namespace: simpson-videochat
+spec:
+  selector:
+    matchLabels:
+      app: simpson-stg-api
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: simpson-stg-api
+    spec:
+      containers:
+        - name: simpson-stg-api-container
+          image: 903501997462.dkr.ecr.ap-northeast-1.amazonaws.com/simpson-stg-api:latest
+          ports:
+            - containerPort: 80
+        - name: simpson-stg-note-container
+          image: 903501997462.dkr.ecr.ap-northeast-1.amazonaws.com/simpson-stg-note:latest
+          ports:
+            - containerPort: 8004

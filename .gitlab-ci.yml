@@ -1,0 +1,92 @@
+stages:
+  - deploy
+
+.ssh_helper: &ssh_helper |
+  function ssh_init() {
+      SSH_PRIVATE_KEY="$1"
+      SSH_KNOWN_HOSTS="$2"
+      which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )
+      eval $(ssh-agent -s)
+      echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+      mkdir -p ~/.ssh
+      chmod 700 ~/.ssh
+      ssh-keyscan -H "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      chmod 644 ~/.ssh/known_hosts
+  }
+
+  function ssh_run() {
+    USER=$1
+    HOST=$2
+    PKEY=$3
+    PROJECT_FOLDER=$4
+    ENV_FILE=$5
+    GIT_BRANCH=$6
+    FLAG_DEPLOY=$7
+    ssh_init "$PKEY" $HOST
+    ssh $USER@$HOST "
+      cd $PROJECT_FOLDER
+      echo $GIT_BRANCH
+      git checkout -- .
+      git pull
+      git checkout $GIT_BRANCH
+      git checkout -b $GIT_BRANCH origin/$GIT_BRANCH
+      if [[ "$FLAG_DEPLOY" == "staging" ]]; then
+        aws ecr get-login-password --region $REGION_STAG | docker login --username AWS --password-stdin $REPOSITORY_URL_STAG
+        docker build -t simpson-stg-api -f ./Dockerfile .
+        docker tag simpson-stg-api:latest $REPOSITORY_URL_STAG/simpson-stg-api:latest
+        export PATH=/home/ubuntu/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/ubuntu/bin:/home/ubuntu/bin:/home/ubuntu/bin
+        docker push $REPOSITORY_URL_STAG/simpson-stg-api:latest
+        cd k8_manifest_stg
+        kubectl delete deployment simpson-stg-api-deploy
+        kubectl apply -f api-deployment.yaml
+      else
+        docker build -t simpson .
+        docker rm -f simpson
+        docker run -it -d --name simpson \
+        -e VIRTUAL_HOST="lesson-room-stag.tgl-cloud.com" \
+        -e VIRTUAL_PORT=80 \
+        -e LETSENCRYPT_HOST="lesson-room-stag.tgl-cloud.com" \
+        -e LETSENCRYPT_EMAIL="tgl-sol@gmail.com" \
+        simpson
+      fi
+    "
+  }
+
+.deploy: &deploy
+  stage: deploy
+  before_script:
+    - *ssh_helper
+  script:
+    - ssh_run "ubuntu" "$HOST" "$SSH_KEY" "$PROJECT_FOLDER" "$ENV_FILE" "$GIT_BRANCH" "$FLAG_DEPLOY"
+
+.staging: &staging
+  environment: staging
+  variables:
+    HOST: $HOST_STAG
+    SSH_KEY: $SSH_PRIVATE_KEY_STAG
+    PROJECT_FOLDER: lesson-room-api
+    ENV_FILE: .env
+    GIT_BRANCH: $CI_COMMIT_REF_NAME
+    FLAG_DEPLOY: staging
+  only:
+    - main
+
+.testing: &testing
+  environment: testing
+  variables:
+    HOST: $HOST_TEST
+    SSH_KEY: $SSH_PRIVATE_KEY_TEST
+    PROJECT_FOLDER: lesson-room-api
+    ENV_FILE: .env
+    GIT_BRANCH: $CI_COMMIT_REF_NAME
+    FLAG_DEPLOY: testing
+  only:
+    - develop
+
+deploy staging:
+  <<: *staging
+  <<: *deploy
+
+deploy testing:
+  <<: *testing
+  <<: *deploy

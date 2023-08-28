@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: simpson-stg-alb-ing
+  namespace: simpson-videochat
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-1:903501997462:certificate/901eee51-6dc4-4681-97bb-ba6816aad349
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+spec:
+  rules:
+    - host: simpson-stg-sig.tgl-cloud.com
+      http:
+        paths:
+          - paths:
+            backend:
+              serviceName: simpson-stg-sig-service
+              servicePort: 80
+    - host: simpson-stg-api.tgl-cloud.com
+      http:
+        paths:
+          - paths:
+            backend:
+              serviceName: simpson-stg-api-service
+              servicePort: 80
+    - host: simpson-stg-note.tgl-cloud.com
+      http:
+        paths:
+          - paths:
+            backend:
+              serviceName: simpson-stg-api-service
+              servicePort: 8004
+    - host: simpson-videochat.tgl-cloud.com
+      http:
+        paths:
+          - paths:
+            backend:
+              serviceName: simpson-stg-web-service
+              servicePort: 80
+    - host: simpson-stg-mng.tgl-cloud.com
+      http:
+        paths:
+          - paths:
+            backend:
+              serviceName: simpson-stg-mng-service
+              servicePort: 80

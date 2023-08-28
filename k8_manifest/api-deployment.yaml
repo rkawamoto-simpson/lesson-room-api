@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simpson-prod-api-deployment
+  namespace: simpson-videochat
+spec:
+  selector:
+    matchLabels:
+      app: simpson-prod-api
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: simpson-prod-api
+    spec:
+      containers:
+        - name: simpson-prod-api-container
+          image: 792387376808.dkr.ecr.ap-northeast-1.amazonaws.com/simpson-prod-api:latest
+          ports:
+            - containerPort: 80
